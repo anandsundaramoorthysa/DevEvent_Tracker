@@ -58,3 +58,39 @@ export async function getBookingsCountByEventId(eventId: string) {
         return { success: false, error: 'Failed to fetch booking count' };
     }
 }
+
+// Add these function blocks to the very bottom of booking.actions.ts
+export async function getBookingsByEmail(email: string) {
+  try {
+    // Ensure database connection helper is invoked if required by the file
+    // await connectToDatabase();
+    
+    // Clean string formats to match registry criteria
+    const cleanEmail = email.toLowerCase().trim();
+    
+    // Fetch user bookings and populate referenced Event model properties
+    const bookings = await Booking.find({ email: cleanEmail })
+      .populate('eventId') 
+      .sort({ createdAt: -1 });
+      
+    return { success: true, bookings: JSON.parse(JSON.stringify(bookings)) };
+  } catch (error) {
+    console.error("Fetch bookings server action failed:", error);
+    return { success: false, error: 'Failed to retrieve bookings.' };
+  }
+}
+
+export async function deleteBooking(bookingId: string) {
+  try {
+    // Invoke deletion protocol directly via Mongoose model identifier references
+    const result = await Booking.findByIdAndDelete(bookingId);
+    if (!result) {
+      return { success: false, error: 'Booking registration record not found.' };
+    }
+    return { success: true, message: 'Registration cancelled successfully.' };
+  } catch (error) {
+    console.error("Delete booking server action failed:", error);
+    return { success: false, error: 'Failed to safely remove booking record.' };
+  }
+}
+
