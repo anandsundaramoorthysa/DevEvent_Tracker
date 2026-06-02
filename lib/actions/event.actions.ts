@@ -1,60 +1,37 @@
-'use server';
+import { connectToDatabase } from "@/lib/db"; 
+import Event from "@/lib/models/event.model"; 
 
-import connectToDatabase from "@/lib/mongodb";
-import { Event, IEvent } from "@/database";
+const escapeRegex = (text: string) => text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 
-export async function getSimilarEventsBySlug(slug: string): Promise<IEvent[]> {
-    try {
-        await connectToDatabase();
+export async function getAllEvents(filters?: { query?: string; mode?: string; tag?: string }) {
+  try {
+    await connectToDatabase();
+    const queryCondition: any = {};
 
-        // Get the current event to find its tags
-        const currentEvent = await Event.findOne({ slug });
-
-        if (!currentEvent) {
-            return [];
-        }
-
-        // Find events with similar tags, excluding the current event
-        const similarEvents = await Event.find({
-            slug: { $ne: slug },
-            tags: { $in: currentEvent.tags }
-        })
-            .limit(3)
-            .lean();
-
-        return JSON.parse(JSON.stringify(similarEvents));
-    } catch (error) {
-        console.error('Error fetching similar events:', error);
-        return [];
+    if (filters?.query) {
+      const safeQuery = escapeRegex(filters.query);
+      queryCondition.$or = [
+        { title: { $regex: safeQuery, $options: 'i' } },
+        { description: { $regex: safeQuery, $options: 'i' } },
+        { tags: { $regex: safeQuery, $options: 'i' } }
+      ];
     }
-}
 
-export async function getEventBySlug(slug: string) {
-    try {
-        await connectToDatabase();
-
-        const event = await Event.findOne({ slug }).lean();
-
-        if (!event) {
-            return { success: false, error: 'Event not found' };
-        }
-
-        return { success: true, event: JSON.parse(JSON.stringify(event)) };
-    } catch (error) {
-        console.error('Error fetching event:', error);
-        return { success: false, error: 'Failed to fetch event' };
+    if (filters?.mode && filters.mode !== 'All') {
+      const safeMode = escapeRegex(filters.mode);
+      queryCondition.mode = { $regex: new RegExp(`^${safeMode}$`, 'i') };
     }
-}
 
-export async function getAllEvents() {
-    try {
-        await connectToDatabase();
-
-        const events = await Event.find({}).sort({ createdAt: -1 }).lean();
-
-        return { success: true, events: JSON.parse(JSON.stringify(events)) };
-    } catch (error) {
-        console.error('Error fetching events:', error);
-        return { success: false, error: 'Failed to fetch events' };
+    if (filters?.tag && filters.tag !== 'All') {
+      const safeTag = escapeRegex(filters.tag);
+      queryCondition.tags = { $regex: new RegExp(`^${safeTag}$`, 'i') };
     }
+
+    const events = await Event.find(queryCondition).sort({ createdAt: -1 });
+    return JSON.parse(JSON.stringify(events));
+
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    return []; 
+  }
 }
