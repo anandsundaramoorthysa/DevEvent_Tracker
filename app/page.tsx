@@ -3,7 +3,7 @@ import EventCard from "@/components/EventCard";
 import { IEvent } from "@/database";
 import { cacheLife } from "next/cache";
 import { getAllEvents } from "@/lib/actions/event.actions";
-import SearchFilters from '@/components/SearchFilters';
+ main
 
 interface PageProps {
   searchParams: Promise<{
@@ -61,6 +61,7 @@ const Page = async ({ searchParams }: PageProps) => {
           </div>
         )}
       </div>
+      <Footer />
     </section>
   )
 }
