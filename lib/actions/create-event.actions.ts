@@ -60,15 +60,11 @@ export async function createEvent(data: CreateEventInput)  {
       event: JSON.parse(JSON.stringify(event)),
     };
   } catch (error) {
-    console.error("Create Event Error:", error);
-    console.error(error);
+  console.error("Create Event Error:", error);
 
-     return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to create event",
-    };
-  }
+  return {
+    success: false,
+    error: "Failed to create event",
+  };
+}
 }
