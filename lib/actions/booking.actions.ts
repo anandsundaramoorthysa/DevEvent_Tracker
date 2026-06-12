@@ -2,6 +2,7 @@
 
 import connectToDatabase from "@/lib/mongodb";
 import { Booking } from "@/database";
+import { revalidatePath } from "next/cache";
 
 interface CreateBookingParams {
     eventId: string;
@@ -26,6 +27,10 @@ export async function createBooking({ eventId, slug, email }: CreateBookingParam
             eventId,
             email: cleanEmail,
         });
+
+        // Revalidate caches after booking
+        revalidatePath(`/events/${slug}`);
+        revalidatePath("/");
 
         return { success: true, booking: JSON.parse(JSON.stringify(booking)) };
     } catch (error) {
@@ -88,6 +93,11 @@ export async function deleteBooking(bookingId: string) {
     if (!result) {
       return { success: false, error: 'Booking registration record not found.' };
     }
+
+    // Revalidate caches after deletion
+    revalidatePath("/");
+    revalidatePath("/my-bookings");
+
     return { success: true, message: 'Registration cancelled successfully.' };
   } catch (error) {
     console.error("Delete booking server action failed:", error);

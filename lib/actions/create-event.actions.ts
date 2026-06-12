@@ -56,6 +56,7 @@ export async function createEvent(data: CreateEventInput)  {
     });
 
     revalidatePath("/");
+    revalidatePath("/events");
 
     return {
       success: true,
